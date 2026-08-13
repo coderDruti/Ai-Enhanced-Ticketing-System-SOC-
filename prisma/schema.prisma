@@ -1,0 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role{
+  ADMIN
+  ANALYST
+  STANDARD
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  PENDING_AI
+  RESOLVED
+}
+
+enum TicketSeverity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+model User{
+  id Int @id @default(autoincrement())
+  email String @unique
+  passwordHash String
+  role Role @default(STANDARD)
+  createdAt DateTime @default(now())
+  tickets Ticket[]
+  auditLogs AuditLog[]
+}
+
+model Ticket{
+  id Int @id @default(autoincrement())
+  title String
+  description String?
+  severity TicketSeverity @default(LOW)
+  status TicketStatus @default(OPEN)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  aiAnalysis Json?
+
+  authorId Int
+  author User @relation(fields: [authorId], references: [id])
+  auditLogs AuditLog[]
+
+}
+
+model AuditLog {
+  id Int @id @default(autoincrement())
+  action String
+  previousState Json?
+  newState Json?
+  timestamp DateTime @default(now())
+  
+  ticketId Int
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  userId Int
+  user User @relation(fields: [userId], references: [id])
+}
