@@ -3,14 +3,17 @@ const express = require('express');
 
 const prisma = require('./db');
 const authRoutes = require('./routes/authRoutes');
+const ticketRoutes = require('./routes/ticketRoutes'); 
 
 const app = express();
 app.use(express.json());
 
 // Routes
+// Authentication routes (register, login, etc.)
 app.use('/api/auth', authRoutes);
 
-
+// Ticket routes (create, view tickets)
+app.use('/api/tickets', ticketRoutes);
 
 async function startServer() {
   try {
