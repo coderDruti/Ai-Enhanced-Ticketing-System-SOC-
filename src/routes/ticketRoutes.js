@@ -1,6 +1,6 @@
 const express = require('express');
-const { createTicket, getAllTickets } = require('../controllers/ticketController');
-const { verifyToken } = require('../middlewares/authMiddleware');
+const { createTicket, getAllTickets, updateTicket, deleteTicket } = require('../controllers/ticketController');
+const { verifyToken, requireRole } = require('../middlewares/authMiddleware');
 const router = express.Router();
 
 // Create a new ticket
@@ -12,6 +12,14 @@ router.post('/', verifyToken, createTicket);
 // GET /api/tickets
 // verifyToken to ensure only logged-in users can view tickets
 router.get('/', verifyToken, getAllTickets);
+
+//Update a ticket (Using Patch for partial data updates)
+// PATCH /api/tickets/:id
+router.patch('/:id', verifyToken, updateTicket);
+
+//Delete a ticket 
+// DELETE /api/tickets/:id
+router.delete('/:id', verifyToken, requireRole('ADMIN'), deleteTicket);
 
 // Export this router to be used in the main app
 module.exports = router;
