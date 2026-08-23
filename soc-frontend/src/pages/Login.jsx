@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 const Login = () => {
 
@@ -56,6 +56,9 @@ const Login = () => {
         <button type="submit">Login</button>
         <button type="reset" onClick={handleReset}>Reset Form</button>
       </form>
+      <p>
+        Need an account? <Link to="/register">Register here</Link>
+      </p>
     </div>
   );
 };

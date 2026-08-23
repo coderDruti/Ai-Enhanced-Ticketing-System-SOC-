@@ -7,6 +7,12 @@ const Dashboard = () => {
   const [tickets, setTickets] = useState([]);
   const [error, setError] = useState('');
   const [userRole, setUserRole] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({
+    title: '',
+    description: '',
+    severity: ''
+  });
 
   // States for the "Create New Ticket" card
   const [title, setTitle] = useState('');
@@ -132,8 +138,39 @@ const Dashboard = () => {
     }
   };
 
+  const handleEditClick = async (ticketId) => {
+    try{
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:3000/api/tickets/${ticketId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(editForm)
+      });
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.error || "Failed to update ticket");
+      setTickets(tickets.map(ticket =>
+        ticket.id === ticketId ? data.ticket : ticket
+      ));
+      setEditingId(null);
+    }catch(error){
+      setError(error.message);
+    }
+  };
+
+  const startEditing = (ticket)=>{
+    setEditingId(ticket.id);
+    setEditForm({
+      title: ticket.title,
+      description: ticket.description,
+      severity: ticket.severity
+    });
+  };
+
   return (
-    <div>
+    <>
       <h2>Ticket Dashboard</h2>
       {/* <p>This is the secure zone where all the database records will be displayed.</p> */}
       <button onClick={handleLogout}>Logout</button>
@@ -168,30 +205,47 @@ const Dashboard = () => {
         </form>
       </div>
 
-      {tickets.length === 0?(<p>No Tickets found in the Database</p>): (
-        tickets.map((ticket)=><>          
-          <div key={ticket.id}>
-            <h3>{ticket.title}</h3>
-            <p>{ticket.description}</p>
-            <p>Severity: {ticket.severity}</p>
-            <p>Status: <select value={ticket.status}
-            onChange={(e)=>handleStatusChange(ticket.id, e.target.value)}
-            >
-              <option value="OPEN">Open</option>
-              <option value="IN_PROGRESS">In Progress</option>
-              <option value="PENDING_AI">Pending AI</option>
-              <option value="RESOLVED">Resolved</option>
-              </select></p>
-            <p>Author: {ticket.author?.email || "Unknown"}</p>
-            
-            {userRole === 'ADMIN' && (
-              <button onClick={() => handleDeleteTicket(ticket.id)}>Delete</button>
-            )}
+      {tickets.map((ticket) => (
+        <div key={ticket.id}>
+    
+          {/* Admin Delete Button */}
+          {userRole === 'ADMIN' && (
+            <button onClick={() => handleDeleteTicket(ticket.id)}>Delete</button>
+          )}
+
+          {/* Toggle between Edit Form and View Mode */}
+          {editingId === ticket.id ? (
+            <div>
+              <input type="text" value={editForm.title} onChange={(e) => setEditForm({...editForm, title: e.target.value})}/>
+              <textarea value={editForm.description} onChange={(e) => setEditForm({...editForm, description: e.target.value})}/>
+              <select value={editForm.severity} onChange={(e) => setEditForm({...editForm, severity: e.target.value})}>
+                <option value="LOW">LOW</option>
+                <option value="MEDIUM">MEDIUM</option>
+                <option value="HIGH">HIGH</option>
+              </select>
+              <div>
+                <button onClick={() => handleSaveEdit(ticket.id)}>Save</button>
+                <button onClick={() => setEditingId(null)}>Cancel</button>
+              </div>
             </div>
+          ) : (
+            <>
+              {/* The standard view */}
+              <div>
+                <h3>{ticket.title}</h3>
+                <button onClick={() => startEditing(ticket)}>Edit</button>
+              </div>
+              <p>{ticket.description}</p>
+              
+              <div>
+                <p><strong>Severity:</strong> {ticket.severity}</p>
+                <p><strong>Author:</strong> {ticket.author?.email || 'Unknown'}</p>
+              </div>
             </>
-            )
-        )}
-    </div>
+          )}
+        </div>
+))}
+    </>
   );
 };
 

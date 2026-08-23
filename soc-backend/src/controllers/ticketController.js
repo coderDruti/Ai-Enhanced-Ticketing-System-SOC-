@@ -79,11 +79,34 @@ const getAllTickets = async (req, res) =>{
 //3. UPDATE A TICKET
 const updateTicket = async (req, res)=>{
     try{
-        const {id} = req.params;
+        const ticketId = parseInt(req.params.id);
         const {title, description, status} = req.body;
+        const userId = req.user.userId;
+        const userRole = req.user.role;
+
+        //get original ticket
+        const existingTicket = await prisma.ticket.findUnique({
+            where: {id:ticketId}
+        });
+
+        if(!existingTicket) return res.status(404).json({message: "Ticket not found"});
+        
+        if (existingTicket.authorId !== userId || userRole !== 'ADMIN'){
+            return res.status(403).json({message: "Unauthorized. You can only update your own tickets"});
+        }
+
         const updatedTicket = await prisma.ticket.update({
-            where:{id: parseInt(id)},
-            data: {title, description, status}
+            where:{id:ticketId},
+            data: {title, description, status},
+            include:{
+                author:{
+                    select:{
+                        id: true,
+                        email:true,
+                        role:true,
+                    }
+                }
+            }
         });
 
         res.status(200).json({message: "Ticket updated successfully", ticket:updatedTicket});
