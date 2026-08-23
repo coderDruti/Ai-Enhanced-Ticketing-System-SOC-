@@ -109,4 +109,29 @@ const deleteTicket = async (req, res)=>{
     }
 };
 
-module.exports={createTicket, getAllTickets, updateTicket, deleteTicket}
+const updateTicketStatus = async (req, res) => {
+    try {
+        const ticketId = parseInt(req.params.id);
+        const { status } = req.body;
+
+        const updatedTicket = await prisma.ticket.update({
+            where:{id:ticketId},
+            data:{status},
+            include:{
+                author:{
+                    select:{
+                        id: true,
+                        email:true,
+                        role:true,
+                    }
+                }
+            }
+        });
+        res.status(200).json({message: "Ticket status updated successfully", ticket:updatedTicket});
+    } catch (error) {
+        console.error("Error updating ticket:",error);
+        res.status(500).json({message: 'Server error. Failed to update ticket status'});
+    }
+};
+
+module.exports={createTicket, getAllTickets, updateTicket, deleteTicket, updateTicketStatus}

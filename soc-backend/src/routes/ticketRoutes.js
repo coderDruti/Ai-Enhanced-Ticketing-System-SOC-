@@ -1,5 +1,5 @@
 const express = require('express');
-const { createTicket, getAllTickets, updateTicket, deleteTicket } = require('../controllers/ticketController');
+const { createTicket, getAllTickets, updateTicket, deleteTicket, updateTicketStatus } = require('../controllers/ticketController');
 const { verifyToken, requireRole } = require('../middlewares/authMiddleware');
 const router = express.Router();
 
@@ -16,6 +16,10 @@ router.get('/', verifyToken, getAllTickets);
 //Update a ticket (Using Patch for partial data updates)
 // PATCH /api/tickets/:id
 router.patch('/:id', verifyToken, updateTicket);
+
+//Update ticket status
+// PATCH /api/tickets/:id/status
+router.patch('/:id/status', verifyToken, updateTicketStatus);
 
 //Delete a ticket 
 // DELETE /api/tickets/:id

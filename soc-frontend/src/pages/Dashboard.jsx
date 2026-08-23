@@ -108,6 +108,30 @@ const Dashboard = () => {
 
   }
 
+  // Helper function to update a ticket in the array
+  const handleStatusChange = async (ticketId, newStatus) => {
+    try{
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:3000/api/tickets/${ticketId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({status: newStatus})
+      });
+
+      const data = await response.json();
+      if(!response.ok) throw new Error(data.error || "Failed to update ticket status");
+      setTickets(tickets.map(ticket =>
+      ticket.id === ticketId ? data.ticket : ticket
+    ));
+    }
+    catch(err){
+      setError(err.message);
+    }
+  };
+
   return (
     <div>
       <h2>Ticket Dashboard</h2>
@@ -150,7 +174,14 @@ const Dashboard = () => {
             <h3>{ticket.title}</h3>
             <p>{ticket.description}</p>
             <p>Severity: {ticket.severity}</p>
-            <p>Status: {ticket.status}</p>
+            <p>Status: <select value={ticket.status}
+            onChange={(e)=>handleStatusChange(ticket.id, e.target.value)}
+            >
+              <option value="OPEN">Open</option>
+              <option value="IN_PROGRESS">In Progress</option>
+              <option value="PENDING_AI">Pending AI</option>
+              <option value="RESOLVED">Resolved</option>
+              </select></p>
             <p>Author: {ticket.author?.email || "Unknown"}</p>
             
             {userRole === 'ADMIN' && (
