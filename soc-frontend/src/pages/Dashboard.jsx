@@ -1,10 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import {jwtDecode} from "jwt-decode";
 
 const Dashboard = () => {
 
   const [tickets, setTickets] = useState([]);
   const [error, setError] = useState('');
+  const [userRole, setUserRole] = useState(null);
 
   // States for the "Create New Ticket" card
   const [title, setTitle] = useState('');
@@ -17,6 +19,10 @@ const Dashboard = () => {
     const fetchTickets = async () => {
       try {
         const token = localStorage.getItem('token');
+        if (token) {
+          const decodedPayload = jwtDecode(token);
+          setUserRole(decodedPayload.role);
+        }
 
         const res = await fetch('http://localhost:3000/api/tickets', {
           method: 'GET',
