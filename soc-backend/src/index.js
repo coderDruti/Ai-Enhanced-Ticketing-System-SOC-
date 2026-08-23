@@ -1,4 +1,5 @@
 require('dotenv').config();
+const cors = require('cors');
 const express = require('express');
 
 const prisma = require('./db');
@@ -7,6 +8,7 @@ const ticketRoutes = require('./routes/ticketRoutes');
 
 const app = express();
 app.use(express.json());
+app.use(cors());
 
 // Routes
 // Authentication routes (register, login, etc.)
