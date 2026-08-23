@@ -44,6 +44,28 @@ const Dashboard = () => {
     fetchTickets();
   }, []); //The empty array tells React that this runs once on load
 
+  const handleDeleteTicket = async (ticketId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:3000/api/tickets/${ticketId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to delete ticket');
+      }
+
+      // Success! Remove the ticket from the UI array instantly
+      setTickets(tickets.filter(ticket => ticket.id !== ticketId));
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const handleLogout = () => {
       // 1. Destroy the keycard
       localStorage.removeItem('token');
@@ -123,16 +145,21 @@ const Dashboard = () => {
       </div>
 
       {tickets.length === 0?(<p>No Tickets found in the Database</p>): (
-        tickets.map((ticket)=>(
+        tickets.map((ticket)=><>          
           <div key={ticket.id}>
             <h3>{ticket.title}</h3>
             <p>{ticket.description}</p>
             <p>Severity: {ticket.severity}</p>
             <p>Status: {ticket.status}</p>
             <p>Author: {ticket.author?.email || "Unknown"}</p>
-          </div>
-        ))
-      )}
+            
+            {userRole === 'ADMIN' && (
+              <button onClick={() => handleDeleteTicket(ticket.id)}>Delete</button>
+            )}
+            </div>
+            </>
+            )
+        )}
     </div>
   );
 };

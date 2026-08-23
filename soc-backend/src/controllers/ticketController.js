@@ -13,6 +13,15 @@ const createTicket = async (req, res) => {
                 title, 
                 description, 
                 authorId // Foreign key linking this ticket to the specific User
+            },
+            include:{
+                author: {
+                    select:{
+                        id:true,
+                        email:true,
+                        role:true,
+                    }
+                }
             }
         });
 
@@ -26,20 +35,39 @@ const createTicket = async (req, res) => {
 // ----2. Get All Tickets----
 const getAllTickets = async (req, res) =>{
     try{
-        const tickets = await prisma.ticket.findMany({
-            include:{
-                author: {
-                    select:{
-                        id: true,
-                        email: true,
-                        role: true,
+        const userId = req.user.userId;
+        const userRole = req.user.role;
+
+        let tickets;
+        if(userRole === 'ADMIN'){
+            tickets = await prisma.ticket.findMany({
+                include:{
+                    author: {
+                        select:{
+                            id: true,
+                            email: true,
+                            role: true,
+                        }
+                    }
+                },
+                orderBy:{createdAt: "desc"}       
+            });
+        }
+        else{
+            tickets = await prisma.ticket.findMany({
+                where: {authorId:userId},
+                orderBy:{createdAt:"desc"},
+                include:{
+                    author:{
+                        select:{
+                            id: true,
+                            email:true,
+                            role:true,
+                        }
                     }
                 }
-            },
-            orderBy:{
-                createdAt: "desc" // Newest Tickets first
-            }       
-        });
+            });
+        }
 
         res.status(200).json(tickets);
     }catch(error){
