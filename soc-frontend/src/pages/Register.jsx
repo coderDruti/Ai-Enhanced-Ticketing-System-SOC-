@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('USER'); // Default to USER
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
@@ -18,7 +19,7 @@ const Register = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         // By default, we register everyone as a STANDARD user
-        body: JSON.stringify({ email, password, role: 'STANDARD' }),
+        body: JSON.stringify({ email, password, role: role }),
       });
 
       const data = await response.json();
@@ -61,6 +62,13 @@ const Register = () => {
           onChange={(e) => setPassword(e.target.value)} 
           required 
         />
+        <select 
+            value={role} 
+            onChange={(e) => setRole(e.target.value)}
+        >
+            <option value="USER">STANDARD</option>
+            <option value="ADMIN">ANALYST</option>
+        </select>
         <button type="submit">Initialize Account</button>
       </form>
 
