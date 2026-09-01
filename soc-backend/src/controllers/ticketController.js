@@ -25,6 +25,8 @@ const createTicket = async (req, res) => {
             }
         });
 
+        req.io.emit("ticket_created", ticket);
+
         res.status(201).json({message: 'Ticket created successfully', ticket});
     } catch (error) {
         console.error("Error creating ticket:", error);
@@ -80,7 +82,7 @@ const getAllTickets = async (req, res) =>{
 const updateTicket = async (req, res)=>{
     try{
         const ticketId = parseInt(req.params.id);
-        const {title, description, status} = req.body;
+        const {title, description, severity} = req.body;
         const userId = req.user.userId;
         const userRole = req.user.role;
 
@@ -91,13 +93,13 @@ const updateTicket = async (req, res)=>{
 
         if(!existingTicket) return res.status(404).json({message: "Ticket not found"});
         
-        if (existingTicket.authorId !== userId || userRole !== 'ADMIN'){
+        if (existingTicket.authorId !== userId && userRole !== 'ADMIN'){
             return res.status(403).json({message: "Unauthorized. You can only update your own tickets"});
         }
 
         const updatedTicket = await prisma.ticket.update({
             where:{id:ticketId},
-            data: {title, description, status},
+            data: {title, description, severity},
             include:{
                 author:{
                     select:{
@@ -108,6 +110,8 @@ const updateTicket = async (req, res)=>{
                 }
             }
         });
+
+        req.io.emit("ticket_updated", updatedTicket);
 
         res.status(200).json({message: "Ticket updated successfully", ticket:updatedTicket});
     }
@@ -124,6 +128,9 @@ const deleteTicket = async (req, res)=>{
         await prisma.ticket.delete({
             where:{id: parseInt(id)}
         });
+
+        req.io.emit("ticket_deleted", parseInt(id));
+        
         res.status(200).json({message: "Ticket deleted successfully"});
     }
     catch(error){
@@ -150,6 +157,9 @@ const updateTicketStatus = async (req, res) => {
                 }
             }
         });
+
+        req.io.emit("ticket_updated", updatedTicket);
+
         res.status(200).json({message: "Ticket status updated successfully", ticket:updatedTicket});
     } catch (error) {
         console.error("Error updating ticket:",error);

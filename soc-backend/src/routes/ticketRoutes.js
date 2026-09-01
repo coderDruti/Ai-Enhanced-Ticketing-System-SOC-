@@ -13,13 +13,14 @@ router.post('/', verifyToken, createTicket);
 // verifyToken to ensure only logged-in users can view tickets
 router.get('/', verifyToken, getAllTickets);
 
-//Update a ticket (Using Patch for partial data updates)
-// PATCH /api/tickets/:id
-router.patch('/:id', verifyToken, updateTicket);
 
 //Update ticket status
 // PATCH /api/tickets/:id/status
 router.patch('/:id/status', verifyToken, updateTicketStatus);
+
+//Update a ticket (Using Patch for partial data updates)
+// PATCH /api/tickets/:id
+router.patch('/:id', verifyToken, updateTicket);
 
 //Delete a ticket 
 // DELETE /api/tickets/:id
