@@ -1,9 +1,10 @@
+const { analyzeTicketSeverity } = require("./aiController");
 const prisma = require("../db");
 
 // ----1. Create a Ticket----
 const createTicket = async (req, res) => {
     try {
-        const {title, description} = req.body;
+        const {title, description, severity} = req.body;
 
         // The userId is securely provided by our verifyToken middleware!
         const authorId = req.user.userId;
@@ -11,7 +12,8 @@ const createTicket = async (req, res) => {
         const ticket = await prisma.ticket.create({
             data: {
                 title, 
-                description, 
+                description,
+                severity, 
                 authorId // Foreign key linking this ticket to the specific User
             },
             include:{
@@ -26,6 +28,7 @@ const createTicket = async (req, res) => {
         });
 
         req.io.emit("ticket_created", ticket);
+        analyzeTicketSeverity(ticket.id, ticket.description, req.io);
 
         res.status(201).json({message: 'Ticket created successfully', ticket});
     } catch (error) {
