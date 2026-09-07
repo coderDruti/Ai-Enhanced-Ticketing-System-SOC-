@@ -5,7 +5,7 @@ import { useTickets } from '../context/TicketContext';
 
 const Dashboard = () => {
 
-  const {tickets} = useTickets();
+  const {tickets, setTickets} = useTickets();
   const [error, setError] = useState('');
   const [userRole, setUserRole] = useState(null);
   const [editingId, setEditingId] = useState(null);
@@ -23,16 +23,35 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-      try {
-        const token = localStorage.getItem('token');
-        if (token) {
-          const decodedPayload = jwtDecode(token);
-          setUserRole(decodedPayload.role);
-        }
-      } catch (error) {
-        setError(error.message);
+  const fetchInitialData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        const decodedPayload = jwtDecode(token);
+        setUserRole(decodedPayload.role);
+
+        // Fetch the baseline data on mount
+        const res = await fetch('http://localhost:3000/api/tickets', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        const data = await res.json();
+        if(!res.ok) throw new Error(data.error || "Failed to fetch tickets");
+        
+        // Populate the UI with historical records
+        setTickets(data); 
       }
-  }, []); //The empty array tells React that this runs once on load
+    } catch (error) {
+      setError(error.message);
+    }
+  };
+
+  fetchInitialData();
+}, [setTickets]);
 
   const handleDeleteTicket = async (ticketId) => {
     try {

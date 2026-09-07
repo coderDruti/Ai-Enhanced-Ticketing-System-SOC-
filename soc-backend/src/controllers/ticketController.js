@@ -127,6 +127,10 @@ const updateTicket = async (req, res)=>{
 //4. DELETE A TICKET
 const deleteTicket = async (req, res)=>{
     try{
+        // 1. Enforce RBAC on the backend!
+        if (req.user.role !== 'ADMIN') {
+            return res.status(403).json({ error: "Unauthorized. Only admins can delete tickets." });
+        }
         const {id} = req.params;
         await prisma.ticket.delete({
             where:{id: parseInt(id)}
