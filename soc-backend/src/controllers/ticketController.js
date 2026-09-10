@@ -1,5 +1,6 @@
 const { analyzeTicketSeverity } = require("./aiController");
 const prisma = require("../db");
+const {createAuditLog} = require("../utils/logger")
 
 // ----1. Create a Ticket----
 const createTicket = async (req, res) => {
@@ -26,6 +27,8 @@ const createTicket = async (req, res) => {
                 }
             }
         });
+        
+        await createAuditLog(ticket.id, authorId, 'TICKET_CREATED', null ,`Ticket opened with title: ${title}`);
 
         req.io.emit("ticket_created", ticket);
         analyzeTicketSeverity(ticket.id, ticket.description, req.io);
@@ -114,6 +117,8 @@ const updateTicket = async (req, res)=>{
             }
         });
 
+        await createAuditLog(ticketId, userId, 'TICKET_UPDATED', existingTicket, updatedTicket);
+
         req.io.emit("ticket_updated", updatedTicket);
 
         res.status(200).json({message: "Ticket updated successfully", ticket:updatedTicket});
@@ -131,12 +136,12 @@ const deleteTicket = async (req, res)=>{
         if (req.user.role !== 'ADMIN') {
             return res.status(403).json({ error: "Unauthorized. Only admins can delete tickets." });
         }
-        const {id} = req.params;
+        const id = parseInt(req.params.id);
         await prisma.ticket.delete({
-            where:{id: parseInt(id)}
+            where:{id: id}
         });
 
-        req.io.emit("ticket_deleted", parseInt(id));
+        req.io.emit("ticket_deleted", id);
         
         res.status(200).json({message: "Ticket deleted successfully"});
     }
@@ -150,6 +155,10 @@ const updateTicketStatus = async (req, res) => {
     try {
         const ticketId = parseInt(req.params.id);
         const { status } = req.body;
+
+        const existingTicket = await prisma.ticket.findUnique({
+            where: {id:ticketId}
+        });
 
         const updatedTicket = await prisma.ticket.update({
             where:{id:ticketId},
@@ -165,6 +174,8 @@ const updateTicketStatus = async (req, res) => {
             }
         });
 
+        await createAuditLog(ticketId, req.user.userId, 'STATUS_UPDATED', {status: existingTicket.status}, {status:status})
+
         req.io.emit("ticket_updated", updatedTicket);
 
         res.status(200).json({message: "Ticket status updated successfully", ticket:updatedTicket});
@@ -174,4 +185,22 @@ const updateTicketStatus = async (req, res) => {
     }
 };
 
-module.exports={createTicket, getAllTickets, updateTicket, deleteTicket, updateTicketStatus}
+const getTicketLogs = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const logs = await prisma.auditLog.findMany({
+            where: { ticketId: parseInt(id) },
+            include: { 
+                user: { select: { email: true, role: true } } // Will be null for AI actions
+            },
+            orderBy: { timestamp: 'desc' } // Newest logs first
+        });
+
+        res.status(200).json(logs);
+    } catch (error) {
+        console.error("Error fetching audit logs:", error);
+        res.status(500).json({ error: 'Server error. Failed to fetch audit logs' });
+    }
+};
+
+module.exports={createTicket, getAllTickets, updateTicket, deleteTicket, updateTicketStatus, getTicketLogs}

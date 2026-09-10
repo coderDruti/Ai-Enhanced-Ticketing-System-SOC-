@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import {jwtDecode} from "jwt-decode";
 import { useTickets } from '../context/TicketContext';
+import AuditLogViewer from '../components/AuditLogViewer';
 
 const Dashboard = () => {
 
@@ -260,6 +261,21 @@ const Dashboard = () => {
                   <strong>Author:</strong> {ticket.author?.email || 'Unknown'}
                 </span>
               </div>
+              {(userRole === 'ADMIN') && (
+              <details className="mt-4 cursor-pointer group">
+                  <summary className="font-semibold text-blue-600 hover:text-blue-800 transition-colors flex items-center outline-none list-none">
+                      <svg 
+                          className="w-4 h-4 mr-2 transition-transform group-open:rotate-90" 
+                          fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                      >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                      View Audit Logs
+                  </summary>
+                  
+                  <AuditLogViewer ticketId={ticket.id} />
+              </details>
+              )}
             </>
           )}
         </div>

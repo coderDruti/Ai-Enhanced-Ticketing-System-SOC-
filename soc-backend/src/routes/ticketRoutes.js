@@ -1,5 +1,5 @@
 const express = require('express');
-const { createTicket, getAllTickets, updateTicket, deleteTicket, updateTicketStatus } = require('../controllers/ticketController');
+const { createTicket, getAllTickets, updateTicket, deleteTicket, updateTicketStatus, getTicketLogs } = require('../controllers/ticketController');
 const { verifyToken, requireRole } = require('../middlewares/authMiddleware');
 const router = express.Router();
 
@@ -25,6 +25,11 @@ router.patch('/:id', verifyToken, updateTicket);
 //Delete a ticket 
 // DELETE /api/tickets/:id
 router.delete('/:id', verifyToken, requireRole('ADMIN'), deleteTicket);
+
+// Get all logs for a specific ticket
+// GET /api/tickets/:id/logs
+router.get('/:id/logs', verifyToken, getTicketLogs);
+
 
 // Export this router to be used in the main app
 module.exports = router;

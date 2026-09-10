@@ -2,6 +2,7 @@ const { ChatOpenAI } = require("@langchain/openai");
 const { PromptTemplate } = require("@langchain/core/prompts");
 const { StringOutputParser } = require("@langchain/core/output_parsers");
 const prisma = require("../db");
+const {createAuditLog} = require('../utils/logger');
 
 const analyzeTicketSeverity = async (ticketId, description, io) => {
   try {
@@ -44,6 +45,10 @@ Ticket Description: ${description}
     // Fallback to MEDIUM if the model hallucinates or includes extra punctuation
     const finalSeverity = validSeverities.includes(aiSeverity) ? aiSeverity : 'MEDIUM';
 
+    const existingTicket = await prisma.ticket.findUnique({
+        where: {id:ticketId}
+    });
+    
     // 6. Update the PostgreSQL database
     const updatedTicket = await prisma.ticket.update({
       where: { id: ticketId },
@@ -52,6 +57,14 @@ Ticket Description: ${description}
         author: { select: { email: true } } 
       }
     });
+
+    await createAuditLog(
+    ticketId, 
+    null, 
+    'AI_CLASSIFICATION', 
+    { severity: existingTicket.severity }, 
+    { severity: finalSeverity }
+);
 
     // 7. Broadcast the AI's decision back to the React frontend instantly
     io.emit("ticket_updated", updatedTicket);
